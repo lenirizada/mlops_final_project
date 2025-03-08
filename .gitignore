@@ -1,3 +1,6 @@
+postgres_data/*
+dagster_home/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

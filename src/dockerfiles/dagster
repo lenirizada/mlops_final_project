@@ -1,0 +1,8 @@
+FROM python:3.12
+
+WORKDIR /app/dags
+COPY dags .
+COPY requirements.txt .
+RUN pip install --no-cache-dir dagster dagster-webserver dagit
+RUN pip install -r requirements.txt
+EXPOSE 3000
