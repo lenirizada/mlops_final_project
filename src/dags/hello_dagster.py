@@ -1,7 +1,14 @@
 from typing import List
 
-from dagster import (AssetExecutionContext, AssetIn, AssetSelection,
-                     Definitions, ScheduleDefinition, asset, define_asset_job)
+from dagster import (
+    AssetExecutionContext,
+    AssetIn,
+    AssetSelection,
+    Definitions,
+    ScheduleDefinition,
+    asset,
+    define_asset_job,
+)
 
 
 @asset(key="my_awesome_first_asset", group_name="get_started")
