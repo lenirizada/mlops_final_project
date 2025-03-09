@@ -17,6 +17,7 @@
 - pre-commit
   - See `.github/workflows/pre-commit.yml` and `.pre-commit-config.yaml`
 - pytest
+  - See `tests/*` directory
 
 ## Deploying Docker Locally
 - Deploying:
