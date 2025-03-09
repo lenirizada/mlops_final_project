@@ -1,26 +1,22 @@
 services:
   dagster-webserver:
     build:
-      context: ./src
+      context: ./src/
       dockerfile: ./dockerfiles/dagster
     container_name: dagster-webserver
     ports:
       - "3000:3000"
-    volumes:
-      - .:/app
     environment:
-      DAGSTER_HOME: /app/dags
+      DAGSTER_HOME: /dagster
     command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
 
   dagster-daemon:
     build:
-      context: ./src
+      context: ./src/
       dockerfile: ./dockerfiles/dagster
     container_name: dagster-daemon
-    volumes:
-      - .:/app
     environment:
-      DAGSTER_HOME: /app/dags
+      DAGSTER_HOME: /dagster
     command: [ "dagster-daemon", "run" ]
 
   db:
@@ -35,8 +31,6 @@ services:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASSWORD}
       - POSTGRES_DB=${PG_DATABASE}
-    volumes:
-      - ./postgres_data:/var/lib/postgresql/data/
     healthcheck:
       test: [ "CMD", "pg_isready", "-p", "${PG_PORT}", "-U", "${PG_USER}" ]
       interval: 5s
@@ -53,8 +47,6 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-    volumes:
-      - minio_data:/data
     networks:
       - single-network
 
@@ -153,9 +145,6 @@ services:
     depends_on:
       - mlflow
     command: [ "jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
-
-volumes:
-  minio_data:
 
 networks:
   single-network:
