@@ -1,112 +1,104 @@
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
-import pandas as pd
-import shap
+from mlflow.models.signature import infer_signature
+from dagster import asset, op, job, repository
+
 from evidently.metric_preset import ClassificationPreset
 from evidently.report import Report
+from matplotlib import pyplot as plt
+
+try:
+    from data_preprocessing import load_data
+except ImportError:
+    from src.data_preprocessing import load_data
+
+try:
+    from experiments import *
+except ImportError:
+    from src.experiments import *
+
 from loguru import logger
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 
-from dagster import Definitions, OpExecutionContext, asset, job, op
-
-MLFLOW_TRACKING_URI = "http://mlflow:5000"
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+# For model evluation
+from sklearn.metrics import roc_auc_score
+import shap
 
 
 @asset
-def iris_dataset() -> pd.DataFrame:
-    iris = load_iris(as_frame=True)
-    df = iris.frame
-    df["target"] = iris.target
-    return df
-
-
-@asset
-def split_data(iris_dataset: pd.DataFrame):
-    X = iris_dataset.drop(columns=["target"])
-    y = iris_dataset["target"]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-    return {"X_train": X_train, "X_test": X_test, "y_train": y_train, "y_test": y_test}
-
-
-@op
-def train_model(split_data):
-    X_train = split_data["X_train"]
-    y_train = split_data["y_train"]
-
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-
-    return model  # No mlflow logging here, handled in `log_to_mlflow`
-
+def split_data():
+    """
+    Split the data into training and testing sets.
+    
+    Returns:
+        X_train: pandas DataFrame
+        X_test: pandas DataFrame
+        y_train: pandas Series
+        y_test: pandas Series
+    """
+    X_train, X_test, y_train, y_test = load_data()
+    return {
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
+    }
+    
 
 @op
-def predict(model, split_data):
-    X_train = split_data["X_train"]
-    y_train_pred = model.predict(X_train)
-    return {"y_train_pred": y_train_pred}
-
+def predict(model, X):
+    return model.predict(X)
 
 @op
-def log_to_mlflow(context: OpExecutionContext, train_model, split_data, predict):
-    logger.add("mlflow_training.log", rotation="1 MB", level="INFO")
+def evaluate_model(model, X_test, y_test, metric='accuracy'):
+    """
+    Evaluate the model on the testing data.
+    
+    Args:
+        model: sklearn model
+        X_test: pandas DataFrame
+        y_test: pandas Series
+    """
+    if metric == 'accuracy':
+        return model.score(X_test, y_test)
+    
+    if metric == 'aucroc':
+        return roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
 
-    X_train = split_data["X_train"]
-    y_train = split_data["y_train"]
-    y_train_pred = predict["y_train_pred"]  # Get predictions
-
-    model = train_model
-
-    with mlflow.start_run() as run:
-        run_id = run.info.run_id
-        logger.info(f"Run started: {run_id}")
-
-        mlflow.sklearn.log_model(model, "iris_rf_model")
-        mlflow.log_params({"n_estimators": 100, "random_state": 42})
-        mlflow.log_metric("train_accuracy", model.score(X_train, y_train))
-
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(X_train)
-        shap.summary_plot(
-            shap_values, X_train, feature_names=X_train.columns, show=False
-        )
-        plt.xlabel("SHAP Value (Impact on Model Output)")
-        plt.ylabel("Features")
-        plt.title("SHAP Summary Plot: Feature Importance")
-        plt.savefig("shap_summary.png")
-        mlflow.log_artifact("shap_summary.png")
-
-        # Include predictions in the report data
-        report_data = pd.DataFrame({"target": y_train, "prediction": y_train_pred})
-
-        report = Report(metrics=[ClassificationPreset()])
-        report.run(reference_data=report_data, current_data=report_data)
-        report.save_html("evidently_report.html")
-        mlflow.log_artifact("evidently_report.html")
-
-        result = mlflow.register_model(
-            model_uri=f"runs:/{run_id}/iris_rf_model",  # Use run_id from the active run
-            name="iris_classifier",
-        )
-
-        logger.info(f"Model registered: {result.name}, version: {result.version}")
-
-
+@op
+def log_model(model_train_func, model_name):
+    try:
+        with mlflow.start_run(run_name=model_name):
+            X_train, X_test, y_train, y_test = load_data()
+            
+            model = model_train_func(X_train, y_train)
+            accuracy = evaluate_model(model, X_test, y_test)
+            auc_roc = evaluate_model(model, X_test, y_test, metric='aucroc')
+            
+            # Log metrics
+            mlflow.log_metric("accuracy", accuracy)
+            mlflow.log_metric("auc_roc", auc_roc)
+            
+            # Log model with signature and input example
+            input_example = X_test[:5]
+            signature = infer_signature(X_train, predict(model, X_train))
+            mlflow.sklearn.log_model(model, "model", signature=signature,
+                                     input_example=input_example)
+            
+            # Register the model
+            model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+            mlflow.register_model(model_uri, model_name)
+            
+            print(f"{model_name} - Accuracy: {accuracy}")
+            print(f"{model_name} - AUC ROC: {auc_roc}")
+    except Exception as e:
+        print(f"Failed to log and register model {model_name}: {e}")
+        
 @job
-def iris_training_job():
-    dataset = iris_dataset()
-    split = split_data(dataset)
-    model = train_model(split)
-    predictions = predict(model, split)
-    log_to_mlflow(model, split, predictions)
-
-
-defs = Definitions(
-    assets=[iris_dataset, split_data],
-    jobs=[iris_training_job],
-)
+def ml_pipeline():
+    """Train and evaluate multiple models."""
+    for model_name in model_list:
+        log_model(model_list[model_name], model_name)
+        
+@repository
+def mlflow_repo():
+    return [ml_pipeline]
