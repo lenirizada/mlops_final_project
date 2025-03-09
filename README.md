@@ -37,13 +37,15 @@ docker-compose down
 ![2](images/job_run1.png)
 - Run job
 ![3](images/job_run2.png)
+- Waterfall view job summary
+  - has 2 flows for normal and skewed data for evidently comparison
+![4](images/job_summary.png)
 
 ## Model Artifacts
-Includes
-- shap plots
-- evidently reports
-![4](images/report1.png)
-![5](images/report2.png)
+Includes shap plots and evidently reports
+![5](images/report1.png)
+![6](images/report2.png)
+![7](images/report3.png)
 
 ## Important links 
 - (after containers are up and dagster job has run to test endpoint)
