@@ -10,12 +10,12 @@ from matplotlib import pyplot as plt
 try:
     from data_preprocessing import load_data
 except ImportError:
-    from src.data_preprocessing import load_data
+    from src.dagster.dags.data_preprocessing import load_data
 
 try:
     from experiments import *
 except ImportError:
-    from src.experiments import *
+    from src.dagster.dags.experiments import *
 
 from loguru import logger
 
@@ -23,6 +23,8 @@ from loguru import logger
 from sklearn.metrics import roc_auc_score
 import shap
 
+MLFLOW_TRACKING_URI = "http://mlflow:5000"
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 @asset
 def split_data():
