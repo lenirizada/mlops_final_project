@@ -2,12 +2,15 @@
 
 ## Project Architecture
 ![3](images/archi.png)
+The **Docker-based architecture** enables end-to-end machine learning workflows by orchestrating components within a single network. Data is fetched using Dagster, and experiments along with trained models are stored in MLflow. MLflow serves the trained models via FastAPI, providing an API for real-time predictions. The API can be accessed through JupyterLab or cURL for local testing, ensuring seamless model deployment and interaction.  
+
+The **GitHub Actions CI/CD pipeline** ensures code quality and reliability through automated checks and testing. Pre-commit hooks enforce formatting and linting standards using tools like Flake8, Black, and Isort. Pytest validates functionality, and successful tests allow changes to be merged, maintaining a robust and well-tested codebase.
 
 ## Directory Structure
 - `.github/workflows` - contains `pre-commit.yml` defines what is run in github actions
-- `images` - images reference to markdown files
+- `images` - image reference to markdown files
 - `src` - source directory
-  - `api` - fast api souce code to predict from deployed model
+  - `api` - fastapi source code to predict from deployed model
   - `dagster` - train model and register model to mlflow
   - `notebooks` - notebook to test 
   - `dockerfiles` - all container dockerfiles consolidated here
@@ -34,6 +37,13 @@ docker-compose down
 ![2](images/job_run1.png)
 - Run job
 ![3](images/job_run2.png)
+
+## Model Artifacts
+Includes
+- shap plots
+- evidently reports
+![4](images/report1.png)
+![5](images/report2.png)
 
 ## Important links 
 - (after containers are up and dagster job has run to test endpoint)

@@ -72,7 +72,12 @@ def log_to_mlflow(context: OpExecutionContext, train_model, split_data, predict)
 
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X_train)
-        shap.summary_plot(shap_values, X_train, show=False)
+        shap.summary_plot(
+            shap_values, X_train, feature_names=X_train.columns, show=False
+        )
+        plt.xlabel("SHAP Value (Impact on Model Output)")
+        plt.ylabel("Features")
+        plt.title("SHAP Summary Plot: Feature Importance")
         plt.savefig("shap_summary.png")
         mlflow.log_artifact("shap_summary.png")
 
