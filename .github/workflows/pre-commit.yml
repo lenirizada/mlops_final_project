@@ -20,6 +20,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r src/requirements.txt  # Ensure you have a requirements file
 
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$PWD/src" >> $GITHUB_ENV
+
     - uses: pre-commit/action@v3.0.0
 
     - name: Run pytest
