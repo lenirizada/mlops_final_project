@@ -3,4 +3,4 @@ requires = ["setuptools"]
 build-backend = "setuptool.build_meta"
 
 [tool.dagster]
-module_name = "dags.hello_dagster"
+module_name = "dags.iris_job"

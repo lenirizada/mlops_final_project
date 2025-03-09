@@ -6,6 +6,8 @@ services:
     container_name: dagster-webserver
     ports:
       - "3000:3000"
+    networks:
+      - single-network
     environment:
       DAGSTER_HOME: /dagster
     command: ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]
@@ -108,44 +110,44 @@ services:
     networks:
       - single-network
 
-#  fastapi:
-#    restart: always
-#    build:
-#      context: ./src
-#      dockerfile: ./dockerfiles/fastapi
-#    container_name: fastapi
-#    ports:
-#      - "8000:8000"
-#    depends_on:
-#      - mlflow
-#    environment:
-#      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
-#      - MLFLOW_ARTIFACT_URI=${MLFLOW_ARTIFACT_URI}
-#      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-#      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-#      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}
-#    networks:
-#      - single-network
-#
-#  jupyterlab_instance:
-#    build:
-#      context: ./src
-#      dockerfile: ./dockerfiles/mlflow
-#    container_name: jupyterlab_instance
-#    ports:
-#      - "8888:8888"
-#    environment:
-#      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
-#      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
-#      - MLFLOW_ARTIFACT_URI=${MLFLOW_ARTIFACT_URI}
-#      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-#      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-#      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}
-#    networks:
-#      - single-network
-#    depends_on:
-#      - mlflow
-#    command: [ "jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
+  fastapi:
+    restart: always
+    build:
+      context: ./src
+      dockerfile: ./dockerfiles/fastapi
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_ARTIFACT_URI=${MLFLOW_ARTIFACT_URI}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}
+    networks:
+      - single-network
+
+  jupyterlab_instance:
+    build:
+      context: ./src
+      dockerfile: ./dockerfiles/mlflow
+    container_name: jupyterlab_instance
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_ARTIFACT_URI=${MLFLOW_ARTIFACT_URI}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}
+    networks:
+      - single-network
+    depends_on:
+      - mlflow
+    command: [ "jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
 
 networks:
   single-network:
