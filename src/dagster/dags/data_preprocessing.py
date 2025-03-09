@@ -53,4 +53,9 @@ def load_data():
     smote = SMOTE(random_state=2)
     X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 
-    return X_train_resampled, X_test, y_train_resampled, y_test
+    return {
+        "X_train": X_train_resampled, 
+        "X_test": X_test, 
+        "y_train": y_train_resampled, 
+        "y_test": y_test
+    }

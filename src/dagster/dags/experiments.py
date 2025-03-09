@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 ## TODO: Add parameter_space as input to train functions
 
 @op
-def train_gb_model_grid_search(X_train, y_train):
+def train_gb_model_grid_search(data_split):
     """
     Train a GradientBoostingClassifier model on the training data with GridSearchCV.
 
@@ -27,11 +27,11 @@ def train_gb_model_grid_search(X_train, y_train):
         'min_samples_split': [2, 3, 4]
     }
     gb_grid = GridSearchCV(gb, param_grid, cv=3)
-    gb_grid.fit(X_train, y_train)
+    gb_grid.fit(data_split["X_train"], data_split["y_train"])
     return gb_grid
 
 @op
-def train_rf_model_grid_search(X_train, y_train):
+def train_rf_model_grid_search(data_split):
     """
     Train a RandomForestClassifier model on the training data with GridSearchCV.
 
@@ -49,11 +49,11 @@ def train_rf_model_grid_search(X_train, y_train):
         'min_samples_split': [2, 3, 4]
     }
     rf_grid = GridSearchCV(rf, param_grid, cv=3)
-    rf_grid.fit(X_train, y_train)
+    rf_grid.fit(data_split["X_train"], data_split["y_train"])
     return rf_grid
 
 @op
-def train_svc_model_grid_search(X_train, y_train):
+def train_svc_model_grid_search(data_split):
     """
     Train a SVC model on the training data with GridSearchCV.
 
@@ -70,11 +70,11 @@ def train_svc_model_grid_search(X_train, y_train):
         'kernel': ['linear', 'rbf', 'poly']
     }
     svc_grid = GridSearchCV(svc, param_grid, cv=3)
-    svc_grid.fit(X_train, y_train)
+    svc_grid.fit(data_split["X_train"], data_split["y_train"])
     return svc_grid
 
 @op
-def train_lr_model_grid_search(X_train, y_train):
+def train_lr_model_grid_search(data_split):
     """
     Train a LogisticRegression model on the training data with GridSearchCV.
 
@@ -91,13 +91,13 @@ def train_lr_model_grid_search(X_train, y_train):
         'penalty': ['l1', 'l2']
     }
     lr_grid = GridSearchCV(lr, param_grid, cv=3)
-    lr_grid.fit(X_train, y_train)
+    lr_grid.fit(data_split["X_train"], data_split["y_train"])
     return lr_grid
 
 
 model_list = {
-    'GradientBoostingClassifier': train_gb_model_grid_search,
-    'RandomForestClassifier': train_rf_model_grid_search,
-    'SVC': train_svc_model_grid_search,
-    'LogisticRegression': train_lr_model_grid_search
+    "GradientBoostingClassifier": train_gb_model_grid_search,
+    "RandomForestClassifier": train_rf_model_grid_search,
+    "SVC": train_svc_model_grid_search,
+    "LogisticRegression": train_lr_model_grid_search
 }

@@ -10,12 +10,12 @@ from matplotlib import pyplot as plt
 try:
     from data_preprocessing import load_data
 except ImportError:
-    from src.dagster.dags.data_preprocessing import load_data
+    from dags.data_preprocessing import load_data
 
 try:
     from experiments import *
 except ImportError:
-    from src.dagster.dags.experiments import *
+    from dags.experiments import *
 
 from loguru import logger
 
@@ -67,12 +67,11 @@ def evaluate_model(model, X_test, y_test, metric='accuracy'):
         return roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
 
 @op
-def log_model(model_train_func, model_name):
+def log_model(model_name, model, data_split):
     try:
         with mlflow.start_run(run_name=model_name):
-            X_train, X_test, y_train, y_test = load_data()
-            
-            model = model_train_func(X_train, y_train)
+            X_test = data_split["X_test"]
+            y_test = data_split["y_test"]
             accuracy = evaluate_model(model, X_test, y_test)
             auc_roc = evaluate_model(model, X_test, y_test, metric='aucroc')
             
@@ -82,7 +81,7 @@ def log_model(model_train_func, model_name):
             
             # Log model with signature and input example
             input_example = X_test[:5]
-            signature = infer_signature(X_train, predict(model, X_train))
+            signature = infer_signature(data_split["X_train"], predict(model, data_split["X_train"]))
             mlflow.sklearn.log_model(model, "model", signature=signature,
                                      input_example=input_example)
             
@@ -97,10 +96,18 @@ def log_model(model_train_func, model_name):
         
 @job
 def ml_pipeline():
-    """Train and evaluate multiple models."""
+    split_data = load_data()
+    
+    # Train, evaluate, and log all models
     for model_name in model_list:
-        log_model(model_list[model_name], model_name)
+        model_train_func = model_list[model_name]
         
+        # Train model
+        model = model_train_func(split_data)
+        
+        # Log model (incl. evaluation)
+        log_model(model_name, model, split_data)
+
 @repository
 def mlflow_repo():
     return [ml_pipeline]

@@ -12,3 +12,5 @@ pytest-cov
 pandas
 shap
 evidently
+ucimlrepo
+imbalanced-learn
