@@ -3,6 +3,7 @@ dagster_home/*
 dags/*
 dagster/*
 *.tmp_*
+*.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
