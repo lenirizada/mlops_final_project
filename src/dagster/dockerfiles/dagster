@@ -1,0 +1,16 @@
+FROM python:3.9-slim
+
+WORKDIR /dagster
+
+# Copy the requirements file and install dependencies
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose the port for the Dagster webserver
+EXPOSE 3000
+
+# Set the command to run the Dagster webserver
+CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]
