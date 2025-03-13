@@ -46,11 +46,11 @@ def split_data():
     }
     
 
-@op
+@asset
 def predict(model, X):
     return model.predict(X)
 
-@op
+@asset
 def evaluate_model(model, X_test, y_test, metric='accuracy'):
     """
     Evaluate the model on the testing data.
@@ -66,7 +66,7 @@ def evaluate_model(model, X_test, y_test, metric='accuracy'):
     if metric == 'aucroc':
         return roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
 
-@op
+@asset
 def log_model(model_name, model, data_split):
     try:
         with mlflow.start_run(run_name=model_name):
@@ -94,7 +94,7 @@ def log_model(model_name, model, data_split):
     except Exception as e:
         print(f"Failed to log and register model {model_name}: {e}")
         
-@job
+@asset
 def ml_pipeline():
     split_data = load_data()
     

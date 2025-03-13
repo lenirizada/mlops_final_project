@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from dagster import build_op_context
-from src.dagster.dags.iris_job import iris_dataset, split_data, train_model, predict, log_to_mlflow
+from src.dagster.dags.main import iris_dataset, split_data, train_model, predict, log_to_mlflow
 
 
 class TestIrisPipeline(unittest.TestCase):
