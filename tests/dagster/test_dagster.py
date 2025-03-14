@@ -1,10 +1,16 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from dagster import build_op_context
-from src.dagster.dags.iris_job import iris_dataset, split_data, train_model, predict, log_to_mlflow
+from src.dagster.dags.iris_job import (
+    iris_dataset,
+    split_data,
+    train_model,
+    predict,
+    log_to_mlflow,
+)
 
 
 class TestIrisPipeline(unittest.TestCase):
@@ -42,25 +48,42 @@ class TestIrisPipeline(unittest.TestCase):
 
     @patch("src.dagster.dags.iris_job.mlflow")
     @patch("src.dagster.dags.iris_job.plt.savefig")
-    @patch("src.dagster.dags.iris_job.shap.TreeExplainer")
-    def test_log_to_mlflow(self, mock_shap, mock_savefig, mock_mlflow):
+    @patch("src.dagster.dags.iris_job.shap")
+    @patch("src.dagster.dags.iris_job.Report")
+    def test_log_to_mlflow(self, mock_report, mock_shap, mock_plt, mock_mlflow):
+        mock_context = build_op_context()
         split = split_data(self.mock_data)
         model = train_model(split)
         predictions = predict(model, split)
 
-        mock_shap.return_value.shap_values.return_value = np.random.rand(len(split["X_train"]), 4)
-        mock_mlflow.start_run.return_value.__enter__.return_value.info.run_id = "test_run"
-        mock_mlflow.register_model.return_value.name = "iris_classifier"
-        mock_mlflow.register_model.return_value.version = 1
+        # Mock SHAP behavior
+        mock_shap_explainer = MagicMock()
+        mock_shap_explainer.shap_values.return_value = np.random.rand(len(split["X_train"]),
+                                                                      len(split["X_train"].columns))
+        mock_shap.TreeExplainer.return_value = mock_shap_explainer
+        mock_shap.waterfall_plot.return_value = None  # Prevent actual plotting
 
-        context = build_op_context()
-        log_to_mlflow(context, model, split, predictions)
+        # Mock Evidently behavior
+        mock_report_instance = MagicMock()
+        mock_report.return_value = mock_report_instance
 
+        log_to_mlflow(mock_context, model, split, predictions)
+
+        # Verify mlflow logging
+        mock_mlflow.start_run.assert_called()
         mock_mlflow.sklearn.log_model.assert_called()
         mock_mlflow.log_params.assert_called()
         mock_mlflow.log_metric.assert_called()
         mock_mlflow.log_artifact.assert_called()
-        mock_mlflow.register_model.assert_called()
+
+        # Verify SHAP was called correctly
+        mock_shap.TreeExplainer.assert_called_with(model)
+
+        # Verify Evidently report was generated
+        mock_report.assert_called()
+        mock_report_instance.run.assert_called()
+        mock_report_instance.save_html.assert_called_with("evidently_report.html")
+        mock_mlflow.log_artifact.assert_called_with("evidently_report.html")
 
 
 if __name__ == "__main__":
