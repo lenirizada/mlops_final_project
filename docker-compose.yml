@@ -45,7 +45,7 @@ services:
 
   minio-create-bucket:
     image: minio/mc
-    container_name: create-bucker
+    container_name: create-bucket
     depends_on:
       - minio
     entrypoint: >

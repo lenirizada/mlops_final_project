@@ -1,4 +1,4 @@
-from dagster import op
+from dagster import asset, Output
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import GradientBoostingClassifier
@@ -8,14 +8,22 @@ from sklearn.linear_model import LogisticRegression
 
 ## TODO: Add parameter_space as input to train functions
 
-@op
-def train_gb_model_grid_search(data_split):
+@asset(
+    metadata={
+        "description": "Trains a Gradient Boosting Classifier with grid search.",
+        "model_name": "GradientBoostingClassifier",
+        "model_version": "1.0"
+    }
+)
+def train_gb_model_grid_search(split_data):
     """
     Train a GradientBoostingClassifier model on the training data with GridSearchCV.
 
     Args:
-        X_train: pandas DataFrame
-        y_train: pandas Series
+        split_data: Dict(
+            X_train: pandas DataFrame
+            y_train: pandas Series
+        )
 
     Returns:
         GridSearchCV
@@ -27,11 +35,18 @@ def train_gb_model_grid_search(data_split):
         'min_samples_split': [2, 3, 4]
     }
     gb_grid = GridSearchCV(gb, param_grid, cv=3)
-    gb_grid.fit(data_split["X_train"], data_split["y_train"])
+    gb_grid.fit(split_data["X_train"], split_data["y_train"])
+
     return gb_grid
 
-@op
-def train_rf_model_grid_search(data_split):
+@asset(
+    metadata={
+        "description": "Trains a Random Forest Classifier with grid search.",
+        "model_name": "RandomForestClassifier",
+        "model_version": "1.0"
+    }
+)
+def train_rf_model_grid_search(split_data):
     """
     Train a RandomForestClassifier model on the training data with GridSearchCV.
 
@@ -49,11 +64,18 @@ def train_rf_model_grid_search(data_split):
         'min_samples_split': [2, 3, 4]
     }
     rf_grid = GridSearchCV(rf, param_grid, cv=3)
-    rf_grid.fit(data_split["X_train"], data_split["y_train"])
+    rf_grid.fit(split_data["X_train"], split_data["y_train"])
+
     return rf_grid
 
-@op
-def train_svc_model_grid_search(data_split):
+@asset(
+    metadata={
+        "description": "Trains a Support Vector Classifier with grid search.",
+        "model_name": "SVC",
+        "model_version": "1.0"
+    }
+)
+def train_svc_model_grid_search(split_data):
     """
     Train a SVC model on the training data with GridSearchCV.
 
@@ -70,11 +92,18 @@ def train_svc_model_grid_search(data_split):
         'kernel': ['linear', 'rbf', 'poly']
     }
     svc_grid = GridSearchCV(svc, param_grid, cv=3)
-    svc_grid.fit(data_split["X_train"], data_split["y_train"])
+    svc_grid.fit(split_data["X_train"], split_data["y_train"])
+
     return svc_grid
 
-@op
-def train_lr_model_grid_search(data_split):
+@asset(
+    metadata={
+        "description": "Trains a Logistic Regression model with grid search.",
+        "model_name": "LogisticRegression",
+        "model_version": "1.0"
+    }
+)
+def train_lr_model_grid_search(split_data):
     """
     Train a LogisticRegression model on the training data with GridSearchCV.
 
@@ -91,13 +120,13 @@ def train_lr_model_grid_search(data_split):
         'penalty': ['l1', 'l2']
     }
     lr_grid = GridSearchCV(lr, param_grid, cv=3)
-    lr_grid.fit(data_split["X_train"], data_split["y_train"])
+    lr_grid.fit(split_data["X_train"], split_data["y_train"])
+ 
     return lr_grid
 
-
 model_list = {
-    "GradientBoostingClassifier": train_gb_model_grid_search,
-    "RandomForestClassifier": train_rf_model_grid_search,
-    "SVC": train_svc_model_grid_search,
-    "LogisticRegression": train_lr_model_grid_search
+    'GradientBoosting': train_gb_model_grid_search,
+    'RandomForest': train_rf_model_grid_search,
+    'SVC': train_svc_model_grid_search,
+    'LinearRegression': train_lr_model_grid_search
 }

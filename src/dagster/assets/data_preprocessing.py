@@ -1,36 +1,66 @@
 from ucimlrepo import fetch_ucirepo
 
-from dagster import asset
+from dagster import op, Out
 
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 
-@asset
-def load_data():
+@op(
+    out={
+        "features": Out(pd.DataFrame),
+        "targets": Out(pd.Series)
+    },
+    description=("Load the Online Shoppers Purchasing Intention dataset from "
+                 "the UCI repo.")
+)
+def load_data() -> tuple[pd.DataFrame, pd.Series]:
     """
-    Load and preprocess the Online Shoppers Purchasing Intention dataset from UCI repo.
-    
-    This applies OneHotEncoding to categorical columns and then SMOTE to the training data.
+    Load the Online Shoppers Purchasing Intention dataset from UCI repo.
     
     Returns:
-        X_train_resampled: pandas DataFrame
-        y_train_resampled: pandas Series
-        X_test: pandas DataFrame
-        y_test: pandas Series
+        X: pandas DataFrame, features
+        y: pandas Series, targets
     """
     # fetch dataset 
     online_shoppers_purchasing_intention_dataset = fetch_ucirepo(id=468) 
   
     # data (as pandas dataframes) 
     X = online_shoppers_purchasing_intention_dataset.data.features 
-    y = online_shoppers_purchasing_intention_dataset.data.targets 
+    y = online_shoppers_purchasing_intention_dataset.data.targets['Revenue']
+
+    return X, y
+
+
+@op(
+    out=Out(dict),
+    description=("Preprocess the data by applying OneHotEncoding to "
+                 "categorical columns, splitting the data to train and test "
+                 "sets, and resampling the train set using SMOTE.")
+)
+def preprocess_data(features: pd.DataFrame, targets: pd.Series) -> dict:
+    """
+    Preprocess the data by:
+        - applying OneHotEncoding to categorical columns,
+        - splitting the data to train and test sets, and 
+        - resampling the train set using SMOTE.
+
+    Args:
+        data(features: pandas DataFrame, targets: pandas Series)
+        
+    Returns:
+        X_train_resampled: pandas DataFrame
+        y_train_resampled: pandas Series
+        X_test: pandas DataFrame
+        y_test: pandas Series
+    """
+    X, y = features, targets
 
     # Identify categorical columns
     categorical_cols = ['Administrative', 'Informational', 'ProductRelated',
                         'SpecialDay', 'Month', 'VisitorType', 'Weekend',
-                        'OperatingSystem', 'Browser', 'Region', 'TrafficType']
+                        'OperatingSystems', 'Browser', 'Region', 'TrafficType']
 
     # Apply OneHotEncoder to categorical columns
     encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
@@ -59,3 +89,10 @@ def load_data():
         "y_train": y_train_resampled, 
         "y_test": y_test
     }
+
+if __name__ == '__main__':
+    features, target = load_data()
+    
+    print(features.columns)
+    print(features.shape)
+    print(target.shape)
